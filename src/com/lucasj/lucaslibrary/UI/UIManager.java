@@ -5,13 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.lucasj.lucaslibrary.UI.interfaces.Clickable;
+import com.lucasj.lucaslibrary.events.EventHandler;
 import com.lucasj.lucaslibrary.events.input.MouseEvent;
-import com.lucasj.lucaslibrary.events.input.MouseEventListener;
+import com.lucasj.lucaslibrary.events.input.MouseEvent.MouseEventType;
 import com.lucasj.lucaslibrary.game.GameAPI;
 import com.lucasj.lucaslibrary.log.Debug;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
-public class UIManager implements MouseEventListener {
+public class UIManager {
 	
 	private List<UIComponent> components = new ArrayList<>();
 	
@@ -19,7 +20,7 @@ public class UIManager implements MouseEventListener {
 	
 	public UIManager(GameAPI game) {
 		this.game = game;
-		game.getGameEventManager().addListener(this, MouseEvent.class);
+		game.getGameEventManager().addListener(this);
 		Debug.success(this, "Successfully implemented the UI Manager");
 	}
 	
@@ -59,48 +60,16 @@ public class UIManager implements MouseEventListener {
         return p.getXint() >= x && p.getXint() <= x + w && p.getYint() >= y && p.getYint() <= y + h;
     }
 
-	@Override
-	public void onMouseClicked(MouseEvent e) {
-		
-	}
-
-	@Override
-	public void onMousePressed(MouseEvent e) {for (UIComponent component : components) {
-        if (component instanceof Clickable && isPointInComponent(e.getVector(), component)) {
-            ((Clickable) component).onClick(e);
-            break;
-        }
-    }
-		
-	}
-
-	@Override
-	public void onMouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onMouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onMouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onMouseDragged(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onMouseMoved(MouseEvent e) {
-		// TODO Auto-generated method stub
+	@EventHandler
+	public void onMouseEvent(MouseEvent e) {
+		if(e.getType() == MouseEventType.pressed) {
+			for (UIComponent component : components) {
+		        if (component instanceof Clickable && isPointInComponent(e.getVector(), component)) {
+		            ((Clickable) component).onClick(e);
+		            break;
+		        }
+		    }	
+		}
 		
 	}
 
