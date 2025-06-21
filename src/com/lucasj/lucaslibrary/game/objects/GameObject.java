@@ -11,6 +11,7 @@ import com.lucasj.lucaslibrary.game.GameAPI;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
 import com.lucasj.lucaslibrary.game.objects.components.physics.ColliderComponent;
 import com.lucasj.lucaslibrary.game.objects.components.physics.PhysicsComponent;
+import com.lucasj.lucaslibrary.game.objects.components.physics.Transform;
 import com.lucasj.lucaslibrary.log.Debug;
 import com.lucasj.lucaslibrary.math.Quadtree;
 import com.lucasj.lucaslibrary.math.Rectangle;
@@ -27,8 +28,13 @@ public abstract class GameObject {
 	
 	protected GameAPI game;
 
+	private GameObject parentObject;
+	private List<GameObject> childObjects;
+	private Vector2D realLocation;
+	
 	public GameObject(GameAPI game) {
 		this.game = game;
+		childObjects = new ArrayList<GameObject>();
 		components = new HashMap<>();
 		instantiatedObjects.add(this);
 		UID = UUID.randomUUID();
@@ -115,6 +121,48 @@ public abstract class GameObject {
 
 	public static Quadtree getTransformObjects() {
 		return transformObjects;
+	}
+
+	public List<GameObject> getChildObjects() {
+		return childObjects;
+	}
+
+	/***
+	 * When attaching object to another, location within the transform component becomes relative to its parent object
+	 * 
+	 * Example:
+	 * 
+	 * Before attaching:
+	 * Parent Obj Location: (5, 5)
+	 * Child Obj Location: (1, 0)
+	 * 
+	 * After attaching:
+	 * Parent Obj Location: (5, 5)
+	 * Child Obj Location: (6, 5)
+	 * 
+	 * USE GameObject#getRealLocation();
+	 * 
+	 * @param obj
+	 */
+	public void addChildObject(GameObject obj) {
+		this.childObjects.add(obj);
+		obj.setParentObject(this);
+	}
+
+	public GameObject getParentObject() {
+		return parentObject;
+	}
+
+	private void setParentObject(GameObject parentObject) {
+		this.parentObject = parentObject;
+	}
+
+	public Vector2D getRealLocation() {
+		if(this.getParentObject() == null) {
+			return this.getComponent(Transform.class).getLocation();
+		} else {
+			return this.parentObject.getRealLocation().add(this.getComponent(Transform.class).getLocation());
+		}
 	}
 	
 }

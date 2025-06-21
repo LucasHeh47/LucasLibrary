@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.lucasj.lucaslibrary.game.objects.GameObject;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
-import com.lucasj.lucaslibrary.math.Rectangle;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
 public class Transform extends ObjectComponent {
@@ -46,6 +45,12 @@ public class Transform extends ObjectComponent {
 		GameObject.getTransformObjects().remove(this);
 	}
 	
+	/***
+	 * If GameObject contains a parent object this will return its relative location from its parent object
+	 * Else will return its raw location
+	 * @return
+	 */
+	@Deprecated
 	public Vector2D getLocation() {
 		return location;
 	}
