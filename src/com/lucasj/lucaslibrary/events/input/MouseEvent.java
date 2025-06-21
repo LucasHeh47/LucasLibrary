@@ -1,7 +1,7 @@
 package com.lucasj.lucaslibrary.events.input;
 
 import com.lucasj.lucaslibrary.events.GameEvent;
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
 public class MouseEvent extends GameEvent {
@@ -19,7 +19,7 @@ public class MouseEvent extends GameEvent {
 	private java.awt.event.MouseEvent mouseEvent;
 	private MouseEventType type;
 	
-	public MouseEvent(GameAPI game, java.awt.event.MouseEvent e, MouseEventType type) {
+	public MouseEvent(GameLib game, java.awt.event.MouseEvent e, MouseEventType type) {
 		super(game);
 		this.mouseEvent = e;
 		this.type = type;

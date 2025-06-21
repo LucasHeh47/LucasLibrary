@@ -17,7 +17,7 @@ import com.lucasj.lucaslibrary.game.objects.GameObject;
 import com.lucasj.lucaslibrary.log.Debug;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
-public abstract class GameAPI extends Canvas implements Runnable {
+public abstract class GameLib extends Canvas implements Runnable {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -39,7 +39,7 @@ public abstract class GameAPI extends Canvas implements Runnable {
 	
 	private UIManager uiManager;
 	
-	private static GameAPI instance;
+	private static GameLib instance;
 	
 	private boolean isGamePaused = false;
 	
@@ -49,7 +49,7 @@ public abstract class GameAPI extends Canvas implements Runnable {
 	 * @param res
 	 * @param targetFPS
 	 */
-	public GameAPI(String gameTitle, Vector2D res, int targetFPS) {
+	public GameLib(String gameTitle, Vector2D res, int targetFPS) {
 		this.gameTitle = gameTitle;
 		this.resolution = res;
 		this.targetFPS = targetFPS;
@@ -231,7 +231,7 @@ public abstract class GameAPI extends Canvas implements Runnable {
 		gameEventManager = new GameEventManager(this);
 	}
 
-	public static GameAPI getInstance() {
+	public static GameLib getInstance() {
 		return instance;
 	}
 

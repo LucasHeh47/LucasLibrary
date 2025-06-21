@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.lucasj.lucaslibrary.events.physics.TransformCollisionEvent;
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.game.objects.GameObject;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
 import com.lucasj.lucaslibrary.log.Debug;
@@ -100,12 +100,12 @@ public class ColliderComponent extends ObjectComponent {
 	
 	private void onCollision(GameObject other, Vector2D collisionPoint) {
 	    TransformCollisionEvent event = new TransformCollisionEvent(
-	        GameAPI.getInstance(),
+	        GameLib.getInstance(),
 	        this.gameObject,
 	        other,
 	        collisionPoint // Pass collision point to event
 	    );
-	    GameAPI.getInstance().getGameEventManager().dispatchEvent(event);
+	    GameLib.getInstance().getGameEventManager().dispatchEvent(event);
 	}
 
 	

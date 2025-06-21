@@ -5,7 +5,7 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.game.objects.components.physics.Transform;
 
 import java.util.ArrayList;

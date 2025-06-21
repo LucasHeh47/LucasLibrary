@@ -1,11 +1,11 @@
 package com.lucasj.lucaslibrary.events.game;
 
 import com.lucasj.lucaslibrary.events.GameEvent;
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 
 public class GamePauseToggleEvent extends GameEvent {
 
-	public GamePauseToggleEvent(GameAPI game) {
+	public GamePauseToggleEvent(GameLib game) {
 		super(game);
 	}
 

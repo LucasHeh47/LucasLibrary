@@ -8,7 +8,7 @@ import com.lucasj.lucaslibrary.UI.interfaces.Clickable;
 import com.lucasj.lucaslibrary.events.EventHandler;
 import com.lucasj.lucaslibrary.events.input.MouseEvent;
 import com.lucasj.lucaslibrary.events.input.MouseEvent.MouseEventType;
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.log.Debug;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
@@ -16,9 +16,9 @@ public class UIManager {
 	
 	private List<UIComponent> components = new ArrayList<>();
 	
-	private GameAPI game;
+	private GameLib game;
 	
-	public UIManager(GameAPI game) {
+	public UIManager(GameLib game) {
 		this.game = game;
 		game.getGameEventManager().addListener(this);
 		Debug.success(this, "Successfully implemented the UI Manager");

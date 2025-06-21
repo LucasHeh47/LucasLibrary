@@ -1,13 +1,13 @@
 package com.lucasj.lucaslibrary.events;
 
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 
 public abstract class GameEvent {
 
 	protected boolean isCancelled = false;
-	protected GameAPI game;
+	protected GameLib game;
 	
-	public GameEvent(GameAPI game) {
+	public GameEvent(GameLib game) {
 		this.game = game;
 	}
 	

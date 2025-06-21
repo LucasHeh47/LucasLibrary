@@ -4,15 +4,15 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.log.Debug;
 
 public class GameEventManager {
 	
 	private List<Object> listeners = new ArrayList<>();
-	private GameAPI game;
+	private GameLib game;
 	
-	public GameEventManager(GameAPI game) {
+	public GameEventManager(GameLib game) {
 		this.game = game;
 		Debug.success(this, "Successfully implemented the Event Manager");
 	}

@@ -2,7 +2,7 @@ package com.lucasj.lucaslibrary.UI;
 
 import java.awt.Font;
 
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 
 public class Text {
 	

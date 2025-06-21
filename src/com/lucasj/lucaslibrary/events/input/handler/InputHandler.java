@@ -8,14 +8,14 @@ import java.awt.event.MouseMotionListener;
 
 import com.lucasj.lucaslibrary.events.input.KeyboardInputEvent;
 import com.lucasj.lucaslibrary.events.input.MouseEvent.MouseEventType;
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.log.Debug;
 
 public class InputHandler implements KeyListener, MouseListener, MouseMotionListener {
 	
-	private GameAPI game;
+	private GameLib game;
 	
-	public InputHandler(GameAPI game) {
+	public InputHandler(GameLib game) {
 		this.game = game;
 		Debug.success(this, "Successfully implemented the Input Handler");
 	}

@@ -7,12 +7,12 @@ import java.io.InputStream;
 import java.net.URL;
 
 import com.lucasj.lucaslibrary.UI.Text;
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.log.Debug;
 
 public class AssetLoader {
 	
-	public static Font getFont(GameAPI game, String fileDirectory) {
+	public static Font getFont(GameLib game, String fileDirectory) {
 		try (InputStream is = game.getClass().getResourceAsStream(fileDirectory)) {
 	        if (is == null) {
 	            Debug.err(AssetLoader.class.getSimpleName(), "Font file not found: " + fileDirectory);

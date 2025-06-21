@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.lucasj.lucaslibrary.game.GameAPI;
+import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
 import com.lucasj.lucaslibrary.game.objects.components.physics.ColliderComponent;
 import com.lucasj.lucaslibrary.game.objects.components.physics.PhysicsComponent;
@@ -22,17 +22,17 @@ import com.lucasj.lucaslibrary.math.Vector2D;
 public abstract class GameObject {
 	
 	private static List<GameObject> instantiatedObjects = new ArrayList<GameObject>();
-	private static Quadtree transformObjects = new Quadtree(new Rectangle(Vector2D.zero(), GameAPI.getInstance().getResolution().getX(), GameAPI.getInstance().getResolution().getY()));
+	private static Quadtree transformObjects = new Quadtree(new Rectangle(Vector2D.zero(), GameLib.getInstance().getResolution().getX(), GameLib.getInstance().getResolution().getY()));
 	private final UUID UID;
 	private Map<Class<? extends ObjectComponent>, Object> components;
 	
-	protected GameAPI game;
+	protected GameLib game;
 
 	private GameObject parentObject;
 	private List<GameObject> childObjects;
 	private Vector2D realLocation;
 	
-	public GameObject(GameAPI game) {
+	public GameObject(GameLib game) {
 		this.game = game;
 		childObjects = new ArrayList<GameObject>();
 		components = new HashMap<>();
