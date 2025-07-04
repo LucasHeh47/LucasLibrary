@@ -6,6 +6,12 @@ public class Rectangle {
     public double halfWidth;
     public double halfHeight;
     
+    /***
+     * 
+     * @param center
+     * @param halfWidth
+     * @param halfHeight
+     */
     public Rectangle(Vector2D center, double halfWidth, double halfHeight) {
         this.center = center;
         this.halfWidth = halfWidth;
@@ -14,6 +20,7 @@ public class Rectangle {
     
     // Returns true if the given particle is inside this rectangle.
     public boolean contains(Vector2D point) {
+    	if(point == null) return false;
         return (point.getX() >= center.getX() - halfWidth &&
         		point.getX() <= center.getX() + halfWidth &&
         		point.getY() >= center.getY() - halfHeight &&

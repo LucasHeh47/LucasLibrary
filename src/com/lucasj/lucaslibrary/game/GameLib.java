@@ -6,6 +6,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferStrategy;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFrame;
 
@@ -13,11 +15,14 @@ import com.lucasj.lucaslibrary.UI.UIManager;
 import com.lucasj.lucaslibrary.events.GameEventManager;
 import com.lucasj.lucaslibrary.events.game.GamePauseToggleEvent;
 import com.lucasj.lucaslibrary.events.input.handler.InputHandler;
+import com.lucasj.lucaslibrary.game.interfaces.Renderable;
+import com.lucasj.lucaslibrary.game.interfaces.Updateable;
 import com.lucasj.lucaslibrary.game.objects.GameObject;
 import com.lucasj.lucaslibrary.log.Debug;
+import com.lucasj.lucaslibrary.log.ErrorCatcher;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
-public abstract class GameLib extends Canvas implements Runnable {
+public abstract class GameLib extends Canvas implements Runnable, Updateable, Renderable {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -39,6 +44,8 @@ public abstract class GameLib extends Canvas implements Runnable {
 	
 	private UIManager uiManager;
 	
+	private Camera camera;
+	
 	private static GameLib instance;
 	
 	private boolean isGamePaused = false;
@@ -50,6 +57,7 @@ public abstract class GameLib extends Canvas implements Runnable {
 	 * @param targetFPS
 	 */
 	public GameLib(String gameTitle, Vector2D res, int targetFPS) {
+		ErrorCatcher.install();
 		this.gameTitle = gameTitle;
 		this.resolution = res;
 		this.targetFPS = targetFPS;
@@ -64,6 +72,15 @@ public abstract class GameLib extends Canvas implements Runnable {
 		
 		setPreferredSize(res.toDimension());
 		frame.add(this);
+
+		inputHandler = new InputHandler(this);
+		
+		addKeyListener(inputHandler);
+		addMouseListener(inputHandler);
+		addMouseWheelListener(inputHandler);
+
+		gameEventManager = new GameEventManager(this);
+		this.uiManager = new UIManager(this);
 		
 		frame.setMinimumSize(res.toDimension());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -71,13 +88,21 @@ public abstract class GameLib extends Canvas implements Runnable {
 		frame.pack();
 		frame.setVisible(true);
 		instance = this;
+		camera = new Camera(this, new Vector2D(0, 0));
 	}
+	
+	/***
+	 * Called right as thread has started before any updates
+	 */
+	public abstract void init();
 	
 	public synchronized void start() {
         if (isRunning) return;
         isRunning = true;
         thread = new Thread(this);
         thread.start();
+        
+        init();
     }
 	
 	public synchronized void stop() {
@@ -93,21 +118,40 @@ public abstract class GameLib extends Canvas implements Runnable {
 	public void apiupdate(double deltaTime) {
 		update(deltaTime);
 		if(!GameObject.getInstantiatedObjects().isEmpty() && !this.isGamePaused) {
-			GameObject.getInstantiatedObjects().forEach(obj -> {
-				obj.update(deltaTime);
-			});
+			List<GameObject> toDestroy = new ArrayList<>();
+			for(GameObject obj : GameObject.getInstantiatedObjects()) {
+				if(obj.isDestroyed()) {
+					toDestroy.add(obj);
+				} else {
+					obj.update(deltaTime);
+				}
+			}
+			if(!toDestroy.isEmpty()) {
+				for(GameObject obj : toDestroy) {
+					GameObject.getInstantiatedObjects().remove(obj);
+				}
+			}
 		}
 		if(this.getUIManager() != null) this.getUIManager().update(deltaTime);
 	}
 	
 	public void apirender(Graphics2D g) {
 		render(g);
-		if(!GameObject.getInstantiatedObjects().isEmpty()) {
-			GameObject.getInstantiatedObjects().forEach(obj -> {
-				obj.render(g);
-			});
+		if(!GameObject.getRootObjects().isEmpty()) {
+			for(GameObject rootObj : GameObject.getRootObjects()) {
+				renderObjectAfterChildren(rootObj, g);
+			}
 		}
 		if(this.getUIManager() != null) this.getUIManager().render(g);
+	}
+	
+	private void renderObjectAfterChildren(GameObject obj, Graphics2D g) {
+		if(obj.hasChildObject()) {
+			for(GameObject objB : obj.getChildObjects()) {
+				renderObjectAfterChildren(objB, g);
+			}
+		}
+		obj.render(g);
 	}
 
 	public abstract void update(double deltaTime);
@@ -221,30 +265,16 @@ public abstract class GameLib extends Canvas implements Runnable {
 		return gameEventManager;
 	}
 	
-	public void addInputHandlers() {
-		inputHandler = new InputHandler(this);
-		
-		addKeyListener(inputHandler);
-	}
-	
-	public void addEventManager() {
-		gameEventManager = new GameEventManager(this);
-	}
-
 	public static GameLib getInstance() {
 		return instance;
 	}
 
 	public UIManager getUIManager() {
 		if(uiManager == null) {
-			Debug.err(this, "UIManager not instantiated");
+			//Debug.err(this, "UIManager not instantiated");
 			return null;
 		}
 		return uiManager;
-	}
-
-	public void addUIManager() {
-		this.uiManager = new UIManager(this);
 	}
 
 	public boolean isGamePaused() {
@@ -255,6 +285,10 @@ public abstract class GameLib extends Canvas implements Runnable {
 		this.isGamePaused = isGamePaused;
 		GamePauseToggleEvent e = new GamePauseToggleEvent(this);
 		this.gameEventManager.dispatchEvent(e);
+	}
+
+	public Camera getCamera() {
+		return camera;
 	}
 
 }

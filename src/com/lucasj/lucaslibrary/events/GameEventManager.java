@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.lucasj.lucaslibrary.game.GameLib;
+import com.lucasj.lucaslibrary.game.objects.components.Cancellable;
 import com.lucasj.lucaslibrary.log.Debug;
 
 public class GameEventManager {
@@ -30,27 +31,40 @@ public class GameEventManager {
     }
     
     public boolean dispatchEvent(GameEvent e) {
-    	for(Object listener : listeners) {
-    		for(Method method : listener.getClass().getDeclaredMethods()) {
-    			Class<?>[] params = method.getParameterTypes();
-				if(params.length == 1 && params[0].isAssignableFrom(e.getClass())) {
-					try {
-						if(method.isAnnotationPresent(EventHandler.class)) {
-							method.invoke(listener, e);
-		    			} else {
-		    				Debug.warn(this, "EventListening Object: " + listener.getClass().getSimpleName() + " is missing annotation \"@EventHandler\" on event method \"" + method.getName() + "\" and is not responding to any dispatched events");
-		    			}
-					} catch (Exception err) {
-						Debug.err(this, "Exception found while invoking EventHandler method: ");
-						err.printStackTrace();
-						return false;
-					}
-				}
-    			
-    		}
-    	}
-    	return true;
+        for (Object listener : listeners) {
+            for (Method method : listener.getClass().getDeclaredMethods()) {
+                Class<?>[] params = method.getParameterTypes();
+                if (params.length == 1 && params[0].isAssignableFrom(e.getClass())) {
+                    try {
+                        if (method.isAnnotationPresent(EventHandler.class)) {
+                            method.setAccessible(true); // In case method is private
+                            method.invoke(listener, e);
+
+                            // Check if the event is cancellable and was cancelled
+                            if (e instanceof Cancellable cancellable && cancellable.isCancelled()) {
+                                return false;
+                            }
+                        } else {
+                            Debug.warn(this, "Missing @EventHandler on \"" + method.getName() + "\" in "
+                                + listener.getClass().getSimpleName());
+                        }
+                    } catch (Exception err) {
+                        Debug.err(this, "Exception found while invoking EventHandler method: ");
+                        err.printStackTrace();
+                        return false;
+                    }
+                }
+            }
+        }
+
+        if (e instanceof Cancellable cancellable) {
+            return !cancellable.isCancelled();
+        }
+
+        return true;
     }
+
+
 
 
 }

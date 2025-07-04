@@ -8,9 +8,13 @@ module LucasLibrary {
 	requires transitive java.desktop;
 	requires transitive java.json;
     exports com.lucasj.lucaslibrary.game;
+    exports com.lucasj.lucaslibrary.game.interfaces;
     exports com.lucasj.lucaslibrary.game.objects;
     exports com.lucasj.lucaslibrary.game.objects.components;
+    exports com.lucasj.lucaslibrary.game.objects.components.player_controller;
     exports com.lucasj.lucaslibrary.game.objects.components.physics;
+    exports com.lucasj.lucaslibrary.game.objects.components.rendering;
+    exports com.lucasj.lucaslibrary.game.objects.components.utility;
     exports com.lucasj.lucaslibrary.math;
     exports com.lucasj.lucaslibrary.log;
     exports com.lucasj.lucaslibrary.events;

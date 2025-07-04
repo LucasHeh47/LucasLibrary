@@ -1,6 +1,6 @@
 package com.lucasj.lucaslibrary.game.objects.components.physics;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.lucasj.lucaslibrary.game.objects.GameObject;
@@ -11,74 +11,69 @@ public class Transform extends ObjectComponent {
 
 	private Vector2D location;
 	private Vector2D size;
-	private float mass;
 	private float rotation;
-	
-	public Transform(GameObject gameObject, Vector2D location, Vector2D size, float mass) {
-		super(gameObject);
+	private float mass = 1.0f;
+	private float inverseMass = 1.0f;
+
+	public Transform(Vector2D location, Vector2D size, float mass) {
+		super();
 		this.location = location;
 		this.size = size;
-		this.mass = mass;
+		setMass(mass);
 	}
-	public Transform(GameObject gameObject, Vector2D location, Vector2D size) {
-		super(gameObject);
-		this.location = location;
-		this.size = size;
-	}
-	public Transform(GameObject gameObject, Vector2D location) {
-		super(gameObject);
-		this.location = location;
-		this.size = Vector2D.zero();
-	}
-	public Transform(GameObject gameObject) {
-		super(gameObject);
+
+	public Transform() {
+		super();
 		this.location = Vector2D.zero();
 		this.size = Vector2D.zero();
+		setMass(1f);
 	}
 	
-	@Override
-	public void onAddComponent() {
-		GameObject.getTransformObjects().insert(this);
-	}
 	@Override
 	public void onRemoveComponent() {
 		GameObject.getTransformObjects().remove(this);
 	}
-	
-	/***
-	 * If GameObject contains a parent object this will return its relative location from its parent object
-	 * Else will return its raw location
-	 * @return
-	 */
-	@Deprecated
+
 	public Vector2D getLocation() {
 		return location;
 	}
+
 	public void setLocation(Vector2D location) {
 		this.location = location;
 	}
+
 	public Vector2D getSize() {
 		return size;
 	}
+
 	public void setSize(Vector2D size) {
 		this.size = size;
-	}
-	public float getMass() {
-		return mass;
-	}
-	public void setMass(float mass) {
-		this.mass = mass;
 	}
 
 	public float getRotation() {
 		return rotation;
 	}
+
 	public void setRotation(float rotation) {
 		this.rotation = rotation;
 	}
+
+	public float getMass() {
+		return mass;
+	}
+
+	public void setMass(float mass) {
+		this.mass = Math.max(mass, 0.0001f);
+		this.inverseMass = 1f / this.mass;
+	}
+
+	public float getInverseMass() {
+		return inverseMass;
+	}
+
 	@Override
 	public List<Class<? extends ObjectComponent>> getRequiredComponents() {
-	    return new ArrayList<>();
+		return Collections.emptyList();
 	}
-	
 }
+

@@ -5,13 +5,15 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 
 import com.lucasj.lucaslibrary.events.input.KeyboardInputEvent;
 import com.lucasj.lucaslibrary.events.input.MouseEvent.MouseEventType;
 import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.log.Debug;
 
-public class InputHandler implements KeyListener, MouseListener, MouseMotionListener {
+public class InputHandler implements KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
 	
 	private GameLib game;
 	
@@ -81,6 +83,12 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
 	@Override
 	public void mouseMoved(MouseEvent e) {
 		com.lucasj.lucaslibrary.events.input.MouseEvent event = new com.lucasj.lucaslibrary.events.input.MouseEvent(game, e, MouseEventType.moved);
+		game.getGameEventManager().dispatchEvent(event);
+	}
+
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent e) {
+		com.lucasj.lucaslibrary.events.input.MouseScrollEvent event = new com.lucasj.lucaslibrary.events.input.MouseScrollEvent(game, e);
 		game.getGameEventManager().dispatchEvent(event);
 	}
 

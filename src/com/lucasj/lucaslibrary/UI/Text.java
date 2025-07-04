@@ -14,24 +14,28 @@ public class Text {
     public static Font DEFAULT_FONT = new Font("Arial", Font.PLAIN, (int) DEFAULT_FONT_SIZE);
 	
 	public Text(String text, Font font, float fontSize) {
+		super();
 		this.text = text;
 		this.font = font;
 		this.fontSize = fontSize;
 	}
 	
 	public Text(String text, Font font) {
+		super();
 		this.text = text;
 		this.font = font;
 		this.fontSize = DEFAULT_FONT_SIZE;
 	}
 	
 	public Text(String text, float fontSize) {
+		super();
 		this.text = text;
 		this.font = DEFAULT_FONT;
 		this.fontSize = fontSize;
 	}
 	
 	public Text(String text) {
+		super();
 		this.text = text;
 		this.font = DEFAULT_FONT;
 		this.fontSize = DEFAULT_FONT_SIZE;

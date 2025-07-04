@@ -12,16 +12,22 @@ public class Panel extends UIComponent {
     private List<UIComponent> children = new ArrayList<>();
     
     public Panel(Vector2DLayout position, Vector2DLayout size) {
+		super();
     	this.position = position;
     	this.size = size;
     }
 
-    @Override
+    public Panel() {
+    	this.position = new Vector2DLayout();
+    	this.size = new Vector2DLayout();
+	}
+
+	@Override
     public void render(Graphics2D g) {
         if (!visible) return;
 
-        int x = position.getX().getValue();
-        int y = position.getY().getValue();
+        int x = this.getPosition().getX().getValue();
+        int y = this.getPosition().getY().getValue();
         int w = size.getX().getValue();
         int h = size.getY().getValue();
 

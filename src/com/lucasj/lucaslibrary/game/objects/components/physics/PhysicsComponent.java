@@ -3,71 +3,61 @@ package com.lucasj.lucaslibrary.game.objects.components.physics;
 import java.util.Collections;
 import java.util.List;
 
+import com.lucasj.lucaslibrary.game.interfaces.Updateable;
 import com.lucasj.lucaslibrary.game.objects.GameObject;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
+import com.lucasj.lucaslibrary.log.Debug;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
-public class PhysicsComponent extends ObjectComponent {
+public class PhysicsComponent extends ObjectComponent implements Updateable {
 
-	private Vector2D velocity;
-	private Vector2D acceleration;
-	private boolean isStatic;
-	private Vector2D friction;
+	private Vector2D velocity = Vector2D.zero();
+	private Vector2D netForce = Vector2D.zero();
+	private boolean useGravity = true;
+	private boolean isStatic = false;
+	private boolean grounded = false;
 
-	public PhysicsComponent(GameObject gameObject, Vector2D velocity, Vector2D acceleration) {
-		super(gameObject);
-		this.velocity = velocity;
-		this.acceleration = acceleration;
+	private static final Vector2D GRAVITY = new Vector2D(0, 500); // m/s^2
+
+	public PhysicsComponent() {
+		super();
 	}
-	
-	public PhysicsComponent(GameObject gameObject, Vector2D velocity) {
-		super(gameObject);
-		this.velocity = velocity;
-		this.acceleration = Vector2D.zero();
-	}
-	
-	public PhysicsComponent(GameObject gameObject) {
-		super(gameObject);
-		this.velocity = Vector2D.zero();
-		this.acceleration = Vector2D.zero();
-	}
-	
+
 	@Override
-	public void onAddComponent() {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void onRemoveComponent() {
-		// TODO Auto-generated method stub
-		
-	}
-	
 	public void update(double deltaTime) {
-		Transform transform = gameObject.getComponent(Transform.class);
-		
-		// Apply friction
-		if(Math.abs(this.velocity.getX()) < this.velocity.getX()) this.velocity.setX(0);
-		if(Math.abs(this.velocity.getY()) < this.velocity.getY()) this.velocity.setY(0);
-		if(this.velocity.getX() < 0) {
-			this.velocity.addX(friction.getX());
-		} else {
-			this.velocity.subX(friction.getX());
-		}
-		if(this.velocity.getY() < 0) {
-			this.velocity.addY(friction.getY());
-		} else {
-			this.velocity.subY(friction.getY());
-		}
-		
-        // Basic Euler integration
-        // v = v + a * dt
-        velocity = velocity.add(acceleration.multiply(deltaTime));
+		if (isStatic) return;
 
-        // p = p + v * dt
-        Vector2D displacement = velocity.multiply(deltaTime);
-        transform.setLocation(transform.getLocation().add(displacement));
-    }
+		Transform transform = gameObject.getComponent(Transform.class);
+		if (transform == null) return;
+
+		Vector2D totalForce = netForce;
+		if (useGravity) {
+			totalForce = totalForce.add(GRAVITY.multiply(transform.getMass()));
+		}
+
+		Vector2D acceleration = totalForce.multiply(transform.getInverseMass());
+
+		velocity = velocity.add(acceleration.multiply(deltaTime));
+		
+		// Stop downward velocity if grounded
+		if (grounded && velocity.getY() > 0) {
+			velocity = new Vector2D(velocity.getX(), 0);
+		}
+		
+		transform.setLocation(transform.getLocation().add(velocity.multiply(deltaTime)));
+
+		netForce = Vector2D.zero(); // Clear forces each frame
+	}
+
+	public void applyForce(Vector2D force) {
+		netForce = netForce.add(force);
+	}
+
+	public void applyImpulse(Vector2D impulse) {
+		if (!isStatic) {
+			velocity = velocity.add(impulse.multiply(gameObject.getComponent(Transform.class).getInverseMass()));
+		}
+	}
 
 	public Vector2D getVelocity() {
 		return velocity;
@@ -75,19 +65,6 @@ public class PhysicsComponent extends ObjectComponent {
 
 	public void setVelocity(Vector2D velocity) {
 		this.velocity = velocity;
-	}
-
-	public Vector2D getAcceleration() {
-		return acceleration;
-	}
-
-	public void setAcceleration(Vector2D acceleration) {
-		this.acceleration = acceleration;
-	}
-
-	@Override
-	public List<Class<? extends ObjectComponent>> getRequiredComponents() {
-	    return Collections.singletonList(Transform.class);
 	}
 
 	public boolean isStatic() {
@@ -98,12 +75,26 @@ public class PhysicsComponent extends ObjectComponent {
 		this.isStatic = isStatic;
 	}
 
-	public Vector2D getFriction() {
-		return friction;
+	public boolean isUseGravity() {
+		return useGravity;
 	}
 
-	public void setFriction(Vector2D friction) {
-		this.friction = friction;
+	public void setUseGravity(boolean useGravity) {
+		this.useGravity = useGravity;
+	}
+
+	@Override
+	public List<Class<? extends ObjectComponent>> getRequiredComponents() {
+		return Collections.singletonList(Transform.class);
+	}
+	
+	public boolean isGrounded() {
+		return grounded;
+	}
+
+	public void setGrounded(boolean grounded) {
+		this.grounded = grounded;
 	}
 
 }
+

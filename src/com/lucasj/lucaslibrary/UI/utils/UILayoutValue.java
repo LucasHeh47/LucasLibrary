@@ -11,6 +11,11 @@ public class UILayoutValue {
         this.isPercent = isPercent;
     }
 
+    private UILayoutValue(int value) {
+        this.value = value;
+        this.isPercent = false;
+    }
+
     public static UILayoutValue pixels(int px) {
         return new UILayoutValue(px, false);
     }
@@ -38,12 +43,16 @@ public class UILayoutValue {
     public UILayoutValue add(UILayoutValue other) {
         if (this.isPercent != other.isPercent)
             Debug.err(this, "Cannot mix percent and pixel values directly.");
-        return new UILayoutValue(this.value + other.value, this.isPercent);
+        
+        // Subtract to give effect of moving upward
+        return new UILayoutValue(this.value - other.value, this.isPercent);
     }
 
     public UILayoutValue subtract(UILayoutValue other) {
         if (this.isPercent != other.isPercent)
         	Debug.err(this, "Cannot mix percent and pixel values directly.");
-        return new UILayoutValue(this.value - other.value, this.isPercent);
+        
+        // Add to give effect of moving downward
+        return new UILayoutValue(this.value + other.value, this.isPercent);
     }
 }

@@ -160,4 +160,13 @@ public class Vector2D {
 		return dim;
 	}
 	
+	public Vector2D min(Vector2D other) {
+	    return new Vector2D(Math.min(this.x, other.x), Math.min(this.y, other.y));
+	}
+
+	public Vector2D max(Vector2D other) {
+	    return new Vector2D(Math.max(this.x, other.x), Math.max(this.y, other.y));
+	}
+
+	
 }

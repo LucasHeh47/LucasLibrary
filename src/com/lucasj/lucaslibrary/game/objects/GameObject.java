@@ -6,20 +6,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import com.lucasj.lucaslibrary.game.GameLib;
+import com.lucasj.lucaslibrary.game.interfaces.Updateable;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
 import com.lucasj.lucaslibrary.game.objects.components.physics.ColliderComponent;
-import com.lucasj.lucaslibrary.game.objects.components.physics.PhysicsComponent;
 import com.lucasj.lucaslibrary.game.objects.components.physics.Transform;
+import com.lucasj.lucaslibrary.game.objects.components.rendering.RenderComponent;
 import com.lucasj.lucaslibrary.log.Debug;
+import com.lucasj.lucaslibrary.log.errors.ObjectComponentError;
 import com.lucasj.lucaslibrary.math.Quadtree;
 import com.lucasj.lucaslibrary.math.Rectangle;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
 // Maybe add delegate methods from components and null check the component beforehand
 
-public abstract class GameObject {
+public class GameObject {
 	
 	private static List<GameObject> instantiatedObjects = new ArrayList<GameObject>();
 	private static Quadtree transformObjects = new Quadtree(new Rectangle(Vector2D.zero(), GameLib.getInstance().getResolution().getX(), GameLib.getInstance().getResolution().getY()));
@@ -32,7 +35,21 @@ public abstract class GameObject {
 	private List<GameObject> childObjects;
 	private Vector2D realLocation;
 	
-	public GameObject(GameLib game) {
+	private boolean destroyed = false;
+	
+	public static List<GameObject> getRootObjects() {
+		List<GameObject> rootObjects = new ArrayList<>();
+		for(GameObject obj : instantiatedObjects) {
+			if(obj.getParentObject() == null) rootObjects.add(obj);
+		}
+		return rootObjects;
+	}
+	
+	protected void onInstanceCreated() {
+		
+	}
+	
+	protected GameObject(GameLib game) {
 		this.game = game;
 		childObjects = new ArrayList<GameObject>();
 		components = new HashMap<>();
@@ -40,9 +57,46 @@ public abstract class GameObject {
 		UID = UUID.randomUUID();
 	}
 	
-	public void delete() {
-		instantiatedObjects.remove(this);
+	private static GameObject instantiate() {
+		GameObject gameObject = new GameObject(GameLib.getInstance());
+		gameObject.onInstanceCreated();
+		return gameObject;
 	}
+	
+	// Builder
+	
+	public static class GameObjectBuilder {
+		private GameObject gameObject;
+		
+		private GameObjectBuilder() {
+			this.gameObject = GameObject.instantiate();
+		}
+		
+		public static GameObjectBuilder create() {
+			return new GameObjectBuilder();
+		}
+		
+		public GameObjectBuilder addTransform(Vector2D location, Vector2D size) {
+			gameObject.addComponent(new Transform(location, size, 10));
+			return this;
+		}
+		
+		public GameObjectBuilder addComponent(ObjectComponent comp) {
+			this.gameObject.addComponent(comp);
+			return this;
+		}
+		
+		public GameObjectBuilder configure(Consumer<GameObject> config) {
+			config.accept(gameObject);
+			return this;
+		}
+		
+		public GameObject build() {
+			return gameObject;
+		}
+	}
+	
+	
 
 	/***
 	 * DO NOT OVERWRITE - Will cause complications with components
@@ -51,11 +105,11 @@ public abstract class GameObject {
 	 * @param deltaTime
 	 */
 	public void update(double deltaTime) {
-		if(this.hasComponent(PhysicsComponent.class)) {
-			this.getComponent(PhysicsComponent.class).update(deltaTime);
-		}
-		if(this.hasComponent(ColliderComponent.class)) {
-			this.getComponent(ColliderComponent.class).update(deltaTime);
+		for(Object obj : this.getAllComponents()) {
+			ObjectComponent objComp = (ObjectComponent) obj;
+			if(objComp instanceof Updateable) {
+				((Updateable) objComp).update(deltaTime);
+			}
 		}
 	}
 
@@ -69,6 +123,8 @@ public abstract class GameObject {
 		if(this.hasComponent(ColliderComponent.class)) {
 			this.getComponent(ColliderComponent.class).render(g);
 		}
+		RenderComponent rc = getComponent(RenderComponent.class);
+		if (rc != null) rc.render(g);
 	}
 	
 	public UUID getUID() {
@@ -76,15 +132,19 @@ public abstract class GameObject {
 	}
 	
 	public <T extends ObjectComponent> boolean addComponent(T component) {
+		if(this.components.containsKey(component.getClass())) {
+			throw new ObjectComponentError("Object already contains component: " + component.getClass().getName());
+		}
 		// Check if GameObject contains all needed ObjectComponents
-		for(Class<? extends ObjectComponent> comp : ((ObjectComponent) component).getRequiredComponents()) {
-			if(!this.hasComponent(comp)) {
-				Debug.err(this, "Unable to add component: " + component.getClass().getSimpleName() + ". Requires another component.");
-				return false;
+		if(component.getRequiredComponents() != null) {
+			for(Class<? extends ObjectComponent> comp : ((ObjectComponent) component).getRequiredComponents()) {
+				if(!this.hasComponent(comp)) {
+					throw new ObjectComponentError("Error while adding component ( " + component.getClass().getName() + ") to Game Object (" + this.getUID().toString() + "), Component requires " + comp.getName());
+				}
 			}
 		}
         components.put(component.getClass(), component);
-        component.onAddComponent();
+        component.onAddComponent(this);
         return true;
     }
 	
@@ -114,6 +174,10 @@ public abstract class GameObject {
     public <T> boolean hasComponent(Class<T> type) {
         return components.containsKey(type);
     }
+    
+    public ArrayList<Object> getAllComponents() {
+    	return new ArrayList<>(this.components.values());
+    }
 
 	public static List<GameObject> getInstantiatedObjects() {
 		return instantiatedObjects;
@@ -125,6 +189,10 @@ public abstract class GameObject {
 
 	public List<GameObject> getChildObjects() {
 		return childObjects;
+	}
+	
+	public boolean hasChildObject() {
+		return this.childObjects != null || !this.childObjects.isEmpty();
 	}
 
 	/***
@@ -163,6 +231,23 @@ public abstract class GameObject {
 		} else {
 			return this.parentObject.getRealLocation().add(this.getComponent(Transform.class).getLocation());
 		}
+	}
+	
+	/***
+	 * Removes object from all Instantiated Objects. If object has children, its children's parent object will be set to this objects parent object
+	 */
+	public void destroy() {
+		if(GameObject.instantiatedObjects.contains(this)) this.destroyed = true;
+		for(GameObject obj : this.childObjects) {
+			obj.setParentObject(this.parentObject);
+		}
+		if(this.parentObject != null) this.parentObject.getChildObjects().remove(this);
+		this.parentObject = null;
+		this.childObjects = null;
+	}
+
+	public boolean isDestroyed() {
+		return destroyed;
 	}
 	
 }

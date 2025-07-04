@@ -10,7 +10,7 @@ public class Tooltip extends UIComponent {
 
     @Override
     public void render(Graphics2D g) {
-        UIUtils.renderFormattedText(g, text, position.getX().getValue(), position.getY().getValue(), Color.WHITE);
+        UIUtils.renderFormattedText(g, text, this.getPosition().getX().getValue(), this.getPosition().getY().getValue(), Color.WHITE);
     }
     
     @Override

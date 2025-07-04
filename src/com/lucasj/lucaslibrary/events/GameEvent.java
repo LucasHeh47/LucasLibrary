@@ -11,8 +11,4 @@ public abstract class GameEvent {
 		this.game = game;
 	}
 	
-	public void setCancelled(boolean isCancelled) {
-		this.isCancelled = isCancelled;
-	}
-	
 }

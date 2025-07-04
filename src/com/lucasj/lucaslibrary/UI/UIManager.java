@@ -41,6 +41,7 @@ public class UIManager {
     public void render(Graphics2D g) {
         for (UIComponent component : components) {
             if (component.isVisible()) {
+            	if(component.getParentObject() instanceof Scroll) continue;
                 component.render(g);
             }
         }

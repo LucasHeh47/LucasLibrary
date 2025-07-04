@@ -11,16 +11,19 @@ public class Menu extends UIComponent {
 	private List<UIComponent> components;
 	
 	public Menu(List<UIComponent> components) {
+		super();
 		this.components = components;
 		this.setVisible(false);
 	}
 	
 	public Menu(UIComponent... components) {
+		super();
 		this.components = new ArrayList<>(Arrays.asList(components));
 		this.setVisible(false);
 	}
 	
 	public Menu(Supplier<UIComponent[]> components) {
+		super();
 		this.components = new ArrayList<>(Arrays.asList(components.get()));
 		this.setVisible(false);
 	}

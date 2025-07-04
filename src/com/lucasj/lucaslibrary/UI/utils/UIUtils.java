@@ -13,7 +13,7 @@ public class UIUtils {
 	public static void renderFormattedText(Graphics2D g, String text, int x, int y, Color defaultColor) {
 	    FontMetrics fm = g.getFontMetrics();
 	    int cursorX = x;
-	    int cursorY = y;
+	    int cursorY = y + fm.getAscent();
 	    Color currentColor = defaultColor;
 
 	    String[] tokens = text.split("(?=\\{)|(?<=\\})");
@@ -42,7 +42,7 @@ public class UIUtils {
 		g.setFont(font);
 	    FontMetrics fm = g.getFontMetrics();
 	    int cursorX = x;
-	    int cursorY = y;
+	    int cursorY = y + fm.getAscent();
 	    Color currentColor = defaultColor;
 
 	    String[] tokens = text.split("(?=\\{)|(?<=\\})");
@@ -71,7 +71,7 @@ public class UIUtils {
 		g.setFont(font.deriveFont(fontSize));
 	    FontMetrics fm = g.getFontMetrics();
 	    int cursorX = x;
-	    int cursorY = y;
+	    int cursorY = y + fm.getAscent();
 	    Color currentColor = defaultColor;
 
 	    String[] tokens = text.split("(?=\\{)|(?<=\\})");
