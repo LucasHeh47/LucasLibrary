@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.lucasj.lucaslibrary.game.objects.GameObject;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
+import com.lucasj.lucaslibrary.log.Debug;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
 public class Transform extends ObjectComponent {
@@ -29,9 +30,22 @@ public class Transform extends ObjectComponent {
 		setMass(1f);
 	}
 	
-	@Override
+	public void onAddComponent(GameObject obj) {
+		super.onAddComponent(obj);
+		GameObject.getTransformObjects().insert(this);
+	}
+	
 	public void onRemoveComponent() {
+		super.onRemoveComponent();
 		GameObject.getTransformObjects().remove(this);
+	}
+	
+	public void move(Vector2D changeInLocation, Vector2D vectorToMove) {
+		if(this.gameObject.containsComponent(ColliderComponent.class)) {
+			vectorToMove.set(gameObject.getComponent(ColliderComponent.class).attemptToMove(changeInLocation, vectorToMove));
+		} else {
+			vectorToMove.set(vectorToMove.add(changeInLocation));
+		}
 	}
 
 	public Vector2D getLocation() {

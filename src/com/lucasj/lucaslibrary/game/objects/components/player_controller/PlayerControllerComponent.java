@@ -7,8 +7,8 @@ import com.lucasj.lucaslibrary.events.EventHandler;
 import com.lucasj.lucaslibrary.events.input.KeyboardInputEvent;
 import com.lucasj.lucaslibrary.events.input.KeyboardInputEvent.KeyEventType;
 import com.lucasj.lucaslibrary.game.GameLib;
-import com.lucasj.lucaslibrary.game.objects.GameObject;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
+import com.lucasj.lucaslibrary.log.Debug;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
 public class PlayerControllerComponent extends ObjectComponent {
@@ -70,8 +70,7 @@ public class PlayerControllerComponent extends ObjectComponent {
 	public Vector2D getDirectionVector() {
 	    double x = (getRight() ? 1 : 0) - (getLeft() ? 1 : 0);
 	    double y = (getDown() ? 1 : 0) - (getUp() ? 1 : 0);
-	    return new Vector2D(x, y);
+	    return new Vector2D(x, y).normalize();
 	}
-
 
 }

@@ -1,38 +1,20 @@
 package com.lucasj.lucaslibrary.game.objects.components.physics;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics2D;
 import java.util.Arrays;
 import java.util.List;
 
-import com.lucasj.lucaslibrary.events.physics.TransformCollisionEvent;
-import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.game.interfaces.Updateable;
 import com.lucasj.lucaslibrary.game.objects.GameObject;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
 import com.lucasj.lucaslibrary.log.Debug;
-import com.lucasj.lucaslibrary.math.OrientedRectangle;
-import com.lucasj.lucaslibrary.math.Rectangle;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
 public class ColliderComponent extends ObjectComponent implements Updateable {
 	
-	private Vector2D relativeLocation;
-	private Vector2D size;
-	
 	private boolean isTrigger = false;
-	
-	private boolean renderCollider = false;
 
 	public ColliderComponent() {
 		super();
-		relativeLocation = Vector2D.zero();
-		if(!this.gameObject.hasComponent(Transform.class)) {
-			Debug.err(this, "Error from Transform Component while updating Collider Component");
-			return;
-		}
-		size = gameObject.getComponent(Transform.class).getSize();
 	}
 	
 	public void update(double deltaTime) {
@@ -42,197 +24,245 @@ public class ColliderComponent extends ObjectComponent implements Updateable {
 	        Debug.err(this, "Error from Transform Component while updating Collider Component");
 	        return;
 	    }
+	}
+	
+	public Vector2D attemptToMove(Vector2D changeInLocation, Vector2D currentLocation) {
+	    Transform selfTransform = gameObject.getComponent(Transform.class);
+	    if (selfTransform == null) return null;
 
-	    Rectangle searchArea = new Rectangle(
-	        transform.getLocation(),
-	        transform.getSize().getX() / 2,
-	        transform.getSize().getY() / 2);
+	    Vector2D originalLocation = currentLocation.copy();
+	    if (changeInLocation.isZero()) return originalLocation;
 
-	    List<Transform> nearby = GameObject.getTransformObjects().query(searchArea);
+	    Vector2D attemptLocation = originalLocation.add(changeInLocation);
 
-	    for (Transform otherTransform : nearby) {
-	        GameObject other = otherTransform.getGameObject();
+	    // First try full move
+	    if (!collidesWithAny(attemptLocation)) {
+	        return attemptLocation;
+	    }
 
-	        if (other == this.gameObject) continue;
-	        if (!other.hasComponent(ColliderComponent.class)) continue;
+	    // Try sliding along the surface
+	    Vector2D slideVector = trySlideAlongSurface(originalLocation, changeInLocation);
+	    if (slideVector != null) {
+	        Vector2D slideAttempt = originalLocation.add(slideVector);
+	        if (!collidesWithAny(slideAttempt)) {
+	            return slideAttempt;
+	        }
+	    }
 
-	        ColliderComponent otherCollider = other.getComponent(ColliderComponent.class);
+	    // Try axis-aligned fallback
+	    Vector2D xAttempt = new Vector2D(attemptLocation.getX(), originalLocation.getY());
+	    if (!collidesWithAny(xAttempt)) return xAttempt;
 
-	        OrientedRectangle a = this.getOrientedBounds();
-	        OrientedRectangle b = otherCollider.getOrientedBounds();
-	        if (Collision.intersects(a, b)) {
-	            // Calculate collision point (center between centers, for simplicity)
-	            Vector2D collisionPoint = transform.getLocation()
-	                .add(otherTransform.getLocation())
-	                .divide(2);
+	    Vector2D yAttempt = new Vector2D(originalLocation.getX(), attemptLocation.getY());
+	    if (!collidesWithAny(yAttempt)) return yAttempt;
 
-	            // Pass the collision point
-	            onCollision(other, collisionPoint);
+	    return null;
+	}
+	
+	private Vector2D trySlideAlongSurface(Vector2D position, Vector2D attemptedMove) {
+	    for (Transform otherTransform : GameObject.getTransformObjects().getTransforms()) {
+	        if (otherTransform.getGameObject() == this.gameObject) continue;
+	        if (!otherTransform.getGameObject().containsComponent(ColliderComponent.class)) continue;
 
-	            // Physics response if NOT a trigger
-	            if (!this.isTrigger && !otherCollider.isTrigger) {
-	                resolveCollision(transform, otherTransform);
+	        ColliderComponent otherCollider = otherTransform.getGameObject().getComponent(ColliderComponent.class);
+	        if (otherCollider.isTrigger()) continue;
+
+	        float rot = otherTransform.getRotation();
+	        if (rot == 0) continue; // Only consider rotated surfaces
+
+	        Vector2D otherLoc = otherCollider.getGameObject().getWorldLocation();
+	        Vector2D otherSize = otherTransform.getSize();
+	        Vector2D center = otherLoc.add(otherSize.divide(2));
+	        Vector2D[] obb = getOBBCorners(center, otherSize, rot);
+
+	        // Find the closest edge
+	        Vector2D closestEdgeNormal = null;
+	        float minDist = Float.MAX_VALUE;
+
+	        for (int i = 0; i < 4; i++) {
+	            Vector2D p1 = obb[i];
+	            Vector2D p2 = obb[(i + 1) % 4];
+	            Vector2D normal = getEdgeNormal(p1, p2);
+	            Vector2D contactPoint = position.add(attemptedMove);
+	            Vector2D toEdge = p1.subtract(contactPoint);
+	            float dist = (float) Math.abs(toEdge.dot(normal));
+
+
+	            if (dist < minDist) {
+	                minDist = dist;
+	                closestEdgeNormal = normal;
 	            }
 	        }
-	    }
-	}
-	
-	private void resolveCollision(Transform a, Transform b) {
-	    PhysicsComponent physicsA = a.getGameObject().getComponent(PhysicsComponent.class);
-	    PhysicsComponent physicsB = b.getGameObject().getComponent(PhysicsComponent.class);
 
-	    boolean aStatic = physicsA == null || physicsA.isStatic();
-	    boolean bStatic = physicsB == null || physicsB.isStatic();
+	        if (closestEdgeNormal != null) {
+	        	Vector2D normal = closestEdgeNormal.normalize();
+	        	Vector2D surfaceTangent = new Vector2D(normal.getY(), -normal.getX()).normalize();
 
-	    // If both objects are static, do nothing
-	    if (aStatic && bStatic) return;
+	        	// Slight push into the slope to prevent hovering
+	        	Vector2D intoSlope = normal.multiply(0.9f); // -0.5 = 0.5 pixels into the slope
 
-	    Vector2D normal = b.getLocation().subtract(a.getLocation());
-	    if (normal.isZero()) {
-	        // Avoid NaN from normalization
-	        normal = new Vector2D(0, -1); // Arbitrary fallback
-	    } else {
-	        normal = normal.normalize();
-	    }
+	        	// Slide along the surface
+	        	Vector2D projected = attemptedMove.add(intoSlope).projectOnto(surfaceTangent);
 
-	    Vector2D velocityA = (physicsA != null) ? physicsA.getVelocity() : Vector2D.zero();
-	    Vector2D velocityB = (physicsB != null) ? physicsB.getVelocity() : Vector2D.zero();
-	    Vector2D relativeVelocity = velocityB.subtract(velocityA);
+	        	// Reject negligible slides
+	        	if (projected.magnitude() < 0.01f) return null;
 
-	    float velocityAlongNormal = (float) relativeVelocity.dot(normal);
+	        	// Add small nudge forward to avoid edge sticking
+	        	Vector2D nudge = surfaceTangent.multiply(0.2f);
+	            
+	            float surfaceAngle = (float) Math.toDegrees(Math.atan2(surfaceTangent.getY(), surfaceTangent.getX()));
+	            Transform selfTransform = gameObject.getComponent(Transform.class);
 
-	    // Don't resolve if objects are moving apart
-	    if (velocityAlongNormal > 0) return;
+	            // Only rotate dynamic objects
+	            PhysicsComponent physics = gameObject.getComponent(PhysicsComponent.class);
+	            if (physics != null && !physics.isStatic()) {
+	                selfTransform.setRotation(surfaceAngle);
+	            }
 
-	    float restitution = 0.5f; // Bounciness
-	    float invMassA = a.getInverseMass();
-	    float invMassB = b.getInverseMass();
-	    float totalInvMass = invMassA + invMassB;
-
-	    // Avoid divide-by-zero if both are static
-	    if (totalInvMass == 0) return;
-
-	    // Impulse scalar
-	    float impulseMagnitude = -(1 + restitution) * velocityAlongNormal / totalInvMass;
-	    Vector2D impulse = normal.multiply(impulseMagnitude);
-
-	    // Apply impulses
-	    if (!aStatic) {
-	        physicsA.applyImpulse(impulse.multiply(-1));
-	    }
-	    if (!bStatic) {
-	        physicsB.applyImpulse(impulse);
-	    }
-
-	    // Use a small slop and percent to avoid jitter
-	    double percent = 0.8;    // move 80% of the overlap
-	    double slop = 0.01;      // ignore very small overlaps
-
-	    double penetration = computePenetrationDepth(a, b, normal);
-	    if (penetration > slop) {
-	        Vector2D correction = normal.multiply((penetration - slop) * percent / totalInvMass);
-	        if (!aStatic) {
-	            a.setLocation(a.getLocation().subtract(correction.multiply(invMassA)));
+	            return projected.add(nudge);
 	        }
-	        if (!bStatic) {
-	            b.setLocation(b.getLocation().add(correction.multiply(invMassB)));
+
+
+	    }
+
+	    return null; // No slide candidate
+	}
+	
+	private Vector2D[] getOBBCorners(Vector2D center, Vector2D size, float rotationDegrees) {
+	    Vector2D halfSize = size.divide(2);
+	    float radians = (float) Math.toRadians(rotationDegrees);
+
+	    // Define local corners relative to center (unrotated)
+	    Vector2D[] localCorners = new Vector2D[] {
+	        new Vector2D(-halfSize.getX(), -halfSize.getY()), // Top-left
+	        new Vector2D( halfSize.getX(), -halfSize.getY()), // Top-right
+	        new Vector2D( halfSize.getX(),  halfSize.getY()), // Bottom-right
+	        new Vector2D(-halfSize.getX(),  halfSize.getY())  // Bottom-left
+	    };
+
+	    // Rotate and translate to world space
+	    Vector2D[] worldCorners = new Vector2D[4];
+	    float cos = (float) Math.cos(radians);
+	    float sin = (float) Math.sin(radians);
+
+	    for (int i = 0; i < 4; i++) {
+	        Vector2D local = localCorners[i];
+	        float rotatedX = (float) (local.getX() * cos - local.getY() * sin);
+	        float rotatedY = (float) (local.getX() * sin + local.getY() * cos);
+	        worldCorners[i] = center.add(new Vector2D(rotatedX, rotatedY));
+	    }
+
+	    return worldCorners;
+	}
+
+	private boolean collidesWithAny(Vector2D newLocation) {
+	    Transform myTransform = gameObject.getComponent(Transform.class);
+	    Vector2D mySize = myTransform.getSize();
+
+	    for (Transform otherTransform : GameObject.getTransformObjects().getTransforms()) {
+	        if (otherTransform.getGameObject() == this.gameObject) continue;
+	        if (!otherTransform.getGameObject().containsComponent(ColliderComponent.class)) continue;
+
+	        ColliderComponent otherCollider = otherTransform.getGameObject().getComponent(ColliderComponent.class);
+	        if (otherCollider.isTrigger()) continue;
+
+	        Vector2D otherLoc = otherCollider.getGameObject().getWorldLocation();
+	        Vector2D otherSize = otherTransform.getSize();
+	        float otherRotation = otherTransform.getRotation();
+
+	        boolean collided = otherRotation == 0
+	            ? aabbCollision(newLocation, mySize, otherLoc, otherSize)
+	            : obbCollision(newLocation, mySize, otherLoc, otherSize, otherRotation);
+
+	        if (collided) return true;
+	    }
+
+	    return false;
+	}
+
+
+
+	// AABB collision check remains unchanged
+	private boolean aabbCollision(Vector2D aLoc, Vector2D aSize, Vector2D bLoc, Vector2D bSize) {
+	    return aLoc.getX() < bLoc.getX() + bSize.getX() &&
+	           aLoc.getX() + aSize.getX() > bLoc.getX() &&
+	           aLoc.getY() < bLoc.getY() + bSize.getY() &&
+	           aLoc.getY() + aSize.getY() > bLoc.getY();
+	}
+	
+	private boolean obbCollision(Vector2D aLoc, Vector2D aSize, Vector2D bLoc, Vector2D bSize, float bRotationDegrees) {
+	    // Build corners for axis-aligned A (your object)
+	    Vector2D[] boxA = {
+	        aLoc,
+	        aLoc.add(new Vector2D(aSize.getX(), 0)),
+	        aLoc.add(new Vector2D(aSize.getX(), aSize.getY())),
+	        aLoc.add(new Vector2D(0, aSize.getY()))
+	    };
+
+	    // Build corners for rotated box B
+	    Vector2D centerB = bLoc.add(bSize.divide(2));
+	    float radians = (float) Math.toRadians(bRotationDegrees);
+
+	    Vector2D halfSize = bSize.divide(2);
+	    Vector2D[] localCorners = {
+	        new Vector2D(-halfSize.getX(), -halfSize.getY()),
+	        new Vector2D(halfSize.getX(), -halfSize.getY()),
+	        new Vector2D(halfSize.getX(), halfSize.getY()),
+	        new Vector2D(-halfSize.getX(), halfSize.getY())
+	    };
+
+	    Vector2D[] boxB = new Vector2D[4];
+	    for (int i = 0; i < 4; i++) {
+	        float cos = (float) Math.cos(radians);
+	        float sin = (float) Math.sin(radians);
+	        Vector2D rotated = new Vector2D(
+	            localCorners[i].getX() * cos - localCorners[i].getY() * sin,
+	            localCorners[i].getX() * sin + localCorners[i].getY() * cos
+	        );
+	        boxB[i] = centerB.add(rotated);
+	    }
+
+	    return satOverlap(boxA, boxB);
+	}
+	
+	private boolean satOverlap(Vector2D[] boxA, Vector2D[] boxB) {
+	    Vector2D[] axes = new Vector2D[] {
+	        getEdgeNormal(boxA[0], boxA[1]),
+	        getEdgeNormal(boxA[1], boxA[2]),
+	        getEdgeNormal(boxB[0], boxB[1]),
+	        getEdgeNormal(boxB[1], boxB[2])
+	    };
+
+	    for (Vector2D axis : axes) {
+	        float[] aProj = projectBoxOntoAxis(boxA, axis);
+	        float[] bProj = projectBoxOntoAxis(boxB, axis);
+
+	        if (aProj[1] < bProj[0] || bProj[1] < aProj[0]) {
+	            return false; // separating axis found
 	        }
 	    }
-	    
-	    // Ground detection based on collision normal
-	    if (!aStatic && physicsA != null && normal.getY() < -0.5f) {
-	        physicsA.setGrounded(true); // Object A landed on top of something
+	    return true; // no separation, collision occurs
+	}
+
+	private Vector2D getEdgeNormal(Vector2D p1, Vector2D p2) {
+	    Vector2D edge = p2.subtract(p1);
+	    return new Vector2D(-edge.getY(), edge.getX()).normalize(); // perpendicular
+	}
+
+	private float[] projectBoxOntoAxis(Vector2D[] box, Vector2D axis) {
+	    float min = Float.MAX_VALUE;
+	    float max = -Float.MAX_VALUE;
+
+	    for (Vector2D corner : box) {
+	        float projection = (float) corner.dot(axis);
+	        if (projection < min) min = projection;
+	        if (projection > max) max = projection;
 	    }
-	    if (!bStatic && physicsB != null && normal.getY() > 0.5f) {
-	        physicsB.setGrounded(true); // Object B landed on top of something
-	    }
 
+	    return new float[] { min, max };
 	}
 
-	private double computePenetrationDepth(Transform a, Transform b, Vector2D normal) {
-		Vector2D aMin = a.getLocation();
-		Vector2D aMax = aMin.add(a.getSize());
-		Vector2D bMin = b.getLocation();
-		Vector2D bMax = bMin.add(b.getSize());
 
-		double dx = Math.min(aMax.getX(), bMax.getX()) - Math.max(aMin.getX(), bMin.getX());
-		double dy = Math.min(aMax.getY(), bMax.getY()) - Math.max(aMin.getY(), bMin.getY());
-
-		if (dx < dy) {
-		    normal = new Vector2D(normal.getX() < 0 ? -1 : 1, 0);
-		    return dx;
-		} else {
-		    normal = new Vector2D(0, normal.getY() < 0 ? -1 : 1);
-		    return dy;
-		}
-	}
-
-	
-	private void onCollision(GameObject other, Vector2D collisionPoint) {
-	    TransformCollisionEvent event = new TransformCollisionEvent(
-	        GameLib.getInstance(),
-	        this.gameObject,
-	        other,
-	        collisionPoint // Pass collision point to event
-	    );
-	    GameLib.getInstance().getGameEventManager().dispatchEvent(event);
-	}
-
-	
-	public void render(Graphics2D g) {
-		if (renderCollider) {
-			Transform transform = gameObject.getComponent(Transform.class);
-			Vector2D loc = transform.getLocation().add(relativeLocation);
-			Vector2D size = this.size;
-			float rotation = transform.getRotation(); // in degrees
-
-			Vector2D screenLoc = GameLib.getInstance().getCamera().worldToScreenLocation(loc);
-
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setColor(Color.GREEN);
-			g2.setStroke(new BasicStroke(2));
-
-			// Rotate around center
-			double centerX = screenLoc.getX() + size.getX() / 2.0;
-			double centerY = screenLoc.getY() + size.getY() / 2.0;
-			g2.rotate(Math.toRadians(rotation), centerX, centerY);
-
-			g2.drawRect(screenLoc.getXint(), screenLoc.getYint(), size.getXint(), size.getYint());
-
-			g2.dispose(); // Restore original transform
-		}
-	}
-
-	
-	public OrientedRectangle getOrientedBounds() {
-		Transform transform = this.gameObject.getComponent(Transform.class);
-		if (transform == null) return null;
-
-		Vector2D center = transform.getLocation()
-			.add(relativeLocation)
-			.add(size.divide(2));
-
-		Vector2D halfSize = size.divide(2);
-		float rotation = transform.getRotation();
-
-		return new OrientedRectangle(center, halfSize, rotation);
-	}
-
-	public Vector2D getRelativeLocation() {
-		return relativeLocation;
-	}
-
-	public void setRelativeLocation(Vector2D relativeLocation) {
-		this.relativeLocation = relativeLocation;
-	}
-
-	public Vector2D getSize() {
-		return size;
-	}
-
-	public void setSize(Vector2D size) {
-		this.size = size;
-	}
 
 	public boolean isTrigger() {
 		return isTrigger;
@@ -242,64 +272,9 @@ public class ColliderComponent extends ObjectComponent implements Updateable {
 		this.isTrigger = isTrigger;
 	}
 
-	public boolean isRenderCollider() {
-		return renderCollider;
-	}
-
-	public void setRenderCollider(boolean renderCollider) {
-		this.renderCollider = renderCollider;
-	}
-
 	@Override
 	public List<Class<? extends ObjectComponent>> getRequiredComponents() {
 		return Arrays.asList(Transform.class, PhysicsComponent.class);
-	}
-	
-	public class Collision {
-		public static boolean intersects(OrientedRectangle a, OrientedRectangle b) {
-			Vector2D[] axes = getAxes(a, b);
-
-			for (Vector2D axis : axes) {
-				if (!overlapsOnAxis(a, b, axis)) {
-					return false; // found a separating axis
-				}
-			}
-			return true; // all projections overlap
-		}
-
-		private static Vector2D[] getAxes(OrientedRectangle a, OrientedRectangle b) {
-			Vector2D[] aCorners = a.getCorners();
-			Vector2D[] bCorners = b.getCorners();
-
-			return new Vector2D[] {
-				getEdgeNormal(aCorners[0], aCorners[1]),
-				getEdgeNormal(aCorners[1], aCorners[2]),
-				getEdgeNormal(bCorners[0], bCorners[1]),
-				getEdgeNormal(bCorners[1], bCorners[2])
-			};
-		}
-
-		private static Vector2D getEdgeNormal(Vector2D p1, Vector2D p2) {
-			Vector2D edge = p2.subtract(p1);
-			return new Vector2D(-edge.getY(), edge.getX()).normalize();
-		}
-
-		private static boolean overlapsOnAxis(OrientedRectangle a, OrientedRectangle b, Vector2D axis) {
-			float[] aProj = project(a.getCorners(), axis);
-			float[] bProj = project(b.getCorners(), axis);
-			return !(aProj[1] < bProj[0] || bProj[1] < aProj[0]);
-		}
-
-		private static float[] project(Vector2D[] corners, Vector2D axis) {
-			float min = (float) corners[0].dot(axis);
-			float max = min;
-			for (int i = 1; i < corners.length; i++) {
-				float proj = (float) corners[i].dot(axis);
-				if (proj < min) min = proj;
-				if (proj > max) max = proj;
-			}
-			return new float[] { min, max };
-		}
 	}
 
 }

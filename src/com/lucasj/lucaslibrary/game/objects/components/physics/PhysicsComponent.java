@@ -26,6 +26,7 @@ public class PhysicsComponent extends ObjectComponent implements Updateable {
 	@Override
 	public void update(double deltaTime) {
 		if (isStatic) return;
+		grounded = false;
 
 		Transform transform = gameObject.getComponent(Transform.class);
 		if (transform == null) return;
@@ -44,7 +45,13 @@ public class PhysicsComponent extends ObjectComponent implements Updateable {
 			velocity = new Vector2D(velocity.getX(), 0);
 		}
 		
-		transform.setLocation(transform.getLocation().add(velocity.multiply(deltaTime)));
+		Vector2D preMove = transform.getLocation().copy();
+		transform.move(velocity.multiply(deltaTime), transform.getLocation());
+		Vector2D postMove = transform.getLocation();
+
+		// If we're not falling and we moved at all, we're likely grounded
+		grounded = velocity.getY() >= 0 && postMove.getY() >= preMove.getY();
+
 
 		netForce = Vector2D.zero(); // Clear forces each frame
 	}

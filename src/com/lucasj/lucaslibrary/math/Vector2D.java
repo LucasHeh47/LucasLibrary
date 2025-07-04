@@ -26,6 +26,19 @@ public class Vector2D {
         this.x = p.x;
         this.y = p.y;
     }
+    
+    public Vector2D set(float x, float y) {
+        this.x = x;
+        this.y = y;
+        return this;
+    }
+
+    public Vector2D set(Vector2D other) {
+    	if(other == null) return this;
+        this.x = other.x;
+        this.y = other.y;
+        return this;
+    }
 
     // Getters and Setters
     public double getX() {
@@ -72,9 +85,17 @@ public class Vector2D {
     public Vector2D add(Vector2D v) {
         return new Vector2D(this.x + v.x, this.y + v.y);
     }
+    public Vector2D add(int x, int y) {
+    	Vector2D v = new Vector2D(x, y);
+        return new Vector2D(this.x + v.x, this.y + v.y);
+    }
 
     // Subtract two vectors
     public Vector2D subtract(Vector2D v) {
+        return new Vector2D(this.x - v.x, this.y - v.y);
+    }
+    public Vector2D subtract(int x, int y) {
+    	Vector2D v = new Vector2D(x, y);
         return new Vector2D(this.x - v.x, this.y - v.y);
     }
 
@@ -158,6 +179,12 @@ public class Vector2D {
 		Dimension dim = new Dimension(); 
 		dim.setSize(x, y);
 		return dim;
+	}
+
+	public Vector2D projectOnto(Vector2D other) {
+	    Vector2D unit = other.normalize();
+	    float scalar = (float) this.dot(unit);
+	    return unit.multiply(scalar);
 	}
 	
 	public Vector2D min(Vector2D other) {

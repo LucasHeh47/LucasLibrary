@@ -25,17 +25,17 @@ public class Camera extends GameObject {
 		super.update(deltaTime);
 		if(following != null) {
 			Transform transform = this.getComponent(Transform.class);
-			transform.setLocation(following.getRealLocation().subtract(followOffset));
+			transform.setLocation(following.getWorldLocation().subtract(followOffset));
 
 		}
 	}
 	
 	public Vector2D worldToScreenLocation(Vector2D worldLocation) {
-		return worldLocation.subtract(this.getRealLocation());
+		return worldLocation.subtract(this.getWorldLocation());
 	}
 	
 	public Vector2D screenToWorldLocation(Vector2D screenLocation) {
-		return screenLocation.add(this.getRealLocation());
+		return screenLocation.add(this.getWorldLocation());
 	}
 	
 	public void setFollow(GameObject obj) {

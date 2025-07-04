@@ -98,11 +98,10 @@ public abstract class GameLib extends Canvas implements Runnable, Updateable, Re
 	
 	public synchronized void start() {
         if (isRunning) return;
+        init();
         isRunning = true;
         thread = new Thread(this);
         thread.start();
-        
-        init();
     }
 	
 	public synchronized void stop() {

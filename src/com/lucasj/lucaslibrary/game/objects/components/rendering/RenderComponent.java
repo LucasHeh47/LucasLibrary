@@ -42,7 +42,7 @@ public class RenderComponent extends ObjectComponent {
 
 	public void render(Graphics2D g) {
 		Transform transform = gameObject.getComponent(Transform.class);
-		Vector2D screenPos = GameLib.getInstance().getCamera().worldToScreenLocation(gameObject.getRealLocation());
+		Vector2D screenPos = GameLib.getInstance().getCamera().worldToScreenLocation(gameObject.getWorldLocation());
 		Vector2D size = transform.getSize();
 		float rotation = transform.getRotation(); // In degrees
 

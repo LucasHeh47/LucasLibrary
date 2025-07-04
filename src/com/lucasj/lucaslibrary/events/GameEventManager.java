@@ -31,7 +31,7 @@ public class GameEventManager {
     }
     
     public boolean dispatchEvent(GameEvent e) {
-        for (Object listener : listeners) {
+        for (Object listener : new ArrayList<>(listeners)) {
             for (Method method : listener.getClass().getDeclaredMethods()) {
                 Class<?>[] params = method.getParameterTypes();
                 if (params.length == 1 && params[0].isAssignableFrom(e.getClass())) {

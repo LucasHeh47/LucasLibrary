@@ -18,7 +18,8 @@ public class Quadtree {
     private final Rectangle boundary;
     private final int capacity;
     private final List<Transform> objects;
-    private boolean subdivided = false;
+
+	private boolean subdivided = false;
 
     private Quadtree northeast;
     private Quadtree northwest;
@@ -147,6 +148,10 @@ public class Quadtree {
         // Object not found
         return false;
     }
+    
+    public List<Transform> getTransforms() {
+		return objects;
+	}
 
 }
 

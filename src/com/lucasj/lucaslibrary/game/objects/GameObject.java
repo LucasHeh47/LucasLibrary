@@ -120,9 +120,6 @@ public class GameObject {
 	 * @param deltaTime
 	 */
 	public void render(Graphics2D g) {
-		if(this.hasComponent(ColliderComponent.class)) {
-			this.getComponent(ColliderComponent.class).render(g);
-		}
 		RenderComponent rc = getComponent(RenderComponent.class);
 		if (rc != null) rc.render(g);
 	}
@@ -138,7 +135,7 @@ public class GameObject {
 		// Check if GameObject contains all needed ObjectComponents
 		if(component.getRequiredComponents() != null) {
 			for(Class<? extends ObjectComponent> comp : ((ObjectComponent) component).getRequiredComponents()) {
-				if(!this.hasComponent(comp)) {
+				if(!this.containsComponent(comp)) {
 					throw new ObjectComponentError("Error while adding component ( " + component.getClass().getName() + ") to Game Object (" + this.getUID().toString() + "), Component requires " + comp.getName());
 				}
 			}
@@ -171,7 +168,7 @@ public class GameObject {
         return type.cast(components.get(type));
     }
 
-    public <T> boolean hasComponent(Class<T> type) {
+    public <T> boolean containsComponent(Class<T> type) {
         return components.containsKey(type);
     }
     
@@ -225,11 +222,11 @@ public class GameObject {
 		this.parentObject = parentObject;
 	}
 
-	public Vector2D getRealLocation() {
+	public Vector2D getWorldLocation() {
 		if(this.getParentObject() == null) {
 			return this.getComponent(Transform.class).getLocation();
 		} else {
-			return this.parentObject.getRealLocation().add(this.getComponent(Transform.class).getLocation());
+			return this.parentObject.getWorldLocation().add(this.getComponent(Transform.class).getLocation());
 		}
 	}
 	
