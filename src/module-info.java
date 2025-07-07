@@ -19,6 +19,7 @@ module LucasLibrary {
     exports com.lucasj.lucaslibrary.math;
     exports com.lucasj.lucaslibrary.log;
     exports com.lucasj.lucaslibrary.events;
+    exports com.lucasj.lucaslibrary.events.component_events;
     exports com.lucasj.lucaslibrary.events.game;
     exports com.lucasj.lucaslibrary.events.gameobjects;
     exports com.lucasj.lucaslibrary.events.input;
