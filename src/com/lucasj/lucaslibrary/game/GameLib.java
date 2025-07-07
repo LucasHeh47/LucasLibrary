@@ -18,6 +18,7 @@ import com.lucasj.lucaslibrary.events.input.handler.InputHandler;
 import com.lucasj.lucaslibrary.game.interfaces.Renderable;
 import com.lucasj.lucaslibrary.game.interfaces.Updateable;
 import com.lucasj.lucaslibrary.game.objects.GameObject;
+import com.lucasj.lucaslibrary.game.world.MapManager;
 import com.lucasj.lucaslibrary.log.Debug;
 import com.lucasj.lucaslibrary.log.ErrorCatcher;
 import com.lucasj.lucaslibrary.math.Vector2D;
@@ -41,7 +42,7 @@ public abstract class GameLib extends Canvas implements Runnable, Updateable, Re
 	
 	private GameEventManager gameEventManager;
 	private InputHandler inputHandler;
-	
+	private MapManager mapManager;
 	private UIManager uiManager;
 	
 	private Camera camera;
@@ -81,6 +82,7 @@ public abstract class GameLib extends Canvas implements Runnable, Updateable, Re
 
 		gameEventManager = new GameEventManager(this);
 		this.uiManager = new UIManager(this);
+		mapManager = new MapManager(64);
 		
 		frame.setMinimumSize(res.toDimension());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -135,6 +137,7 @@ public abstract class GameLib extends Canvas implements Runnable, Updateable, Re
 	}
 	
 	public void apirender(Graphics2D g) {
+		this.mapManager.render(g);
 		render(g);
 		if(!GameObject.getRootObjects().isEmpty()) {
 			for(GameObject rootObj : GameObject.getRootObjects()) {
@@ -288,6 +291,10 @@ public abstract class GameLib extends Canvas implements Runnable, Updateable, Re
 
 	public Camera getCamera() {
 		return camera;
+	}
+
+	public MapManager getMapManager() {
+		return mapManager;
 	}
 
 }

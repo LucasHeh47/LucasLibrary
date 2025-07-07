@@ -65,7 +65,13 @@ public class Colors extends Color {
 		LAVENDER(230, 230, 250),
 		GAINSBORO(220, 220, 220),
 		OLD_LACE(253, 245, 230),
-		FLORAL_WHITE(255, 250, 240);
+		FLORAL_WHITE(255, 250, 240),
+		
+		COMMON(240, 240, 240),
+		UNCOMMON(30, 255, 0),
+		RARE(0, 112, 221),
+		EPIC(163, 53, 238),
+		LEGENDARY(255, 128, 0);
 
         private final Colors color;
 

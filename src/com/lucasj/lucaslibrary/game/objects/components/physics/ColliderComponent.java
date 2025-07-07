@@ -3,9 +3,13 @@ package com.lucasj.lucaslibrary.game.objects.components.physics;
 import java.util.Arrays;
 import java.util.List;
 
+import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.game.interfaces.Updateable;
 import com.lucasj.lucaslibrary.game.objects.GameObject;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
+import com.lucasj.lucaslibrary.game.world.MapManager;
+import com.lucasj.lucaslibrary.game.world.Tile;
+import com.lucasj.lucaslibrary.game.world.TileMap;
 import com.lucasj.lucaslibrary.log.Debug;
 import com.lucasj.lucaslibrary.math.Vector2D;
 
@@ -159,6 +163,7 @@ public class ColliderComponent extends ObjectComponent implements Updateable {
 	    Transform myTransform = gameObject.getComponent(Transform.class);
 	    Vector2D mySize = myTransform.getSize();
 
+	    // Check GameObject collisions
 	    for (Transform otherTransform : GameObject.getTransformObjects().getTransforms()) {
 	        if (otherTransform.getGameObject() == this.gameObject) continue;
 	        if (!otherTransform.getGameObject().containsComponent(ColliderComponent.class)) continue;
@@ -177,10 +182,21 @@ public class ColliderComponent extends ObjectComponent implements Updateable {
 	        if (collided) return true;
 	    }
 
+	    // Check tile collisions
+	    MapManager mapManager = GameLib.getInstance().getMapManager();
+	    if (mapManager != null) {
+	        Vector2D topLeft = newLocation;
+	        Vector2D bottomRight = newLocation.add(mySize);
+
+	        for (int x = topLeft.getXint(); x <= bottomRight.getXint(); x++) {
+	            for (int y = topLeft.getYint(); y <= bottomRight.getYint(); y++) {
+	                if (mapManager.isSolidTileAt(x, y)) return true;
+	            }
+	        }
+	    }
+
 	    return false;
 	}
-
-
 
 	// AABB collision check remains unchanged
 	private boolean aabbCollision(Vector2D aLoc, Vector2D aSize, Vector2D bLoc, Vector2D bSize) {
