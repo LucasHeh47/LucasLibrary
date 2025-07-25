@@ -25,12 +25,15 @@ public class MapManager implements Renderable {
 
 	@Override
 	public void render(Graphics2D g) {
+		
+		int scaledTileSize = (int) (tileSize * GameLib.getInstance().getCamera().getViewport().magnitude());
+		
 		if(worldMap.isEmpty()) return;
 		for(TileMap map : worldMap) {
 			for(int i = 0; i < map.getWidth(); i++) {
 				for(int j = 0; j < map.getHeight(); j++) {
-					Vector2D location = GameLib.getInstance().getCamera().worldToScreenLocation(new Vector2D(j * tileSize, i * tileSize));
-					Tile.getTile(map.getTile(i, j)).render(g, location, tileSize);
+					Vector2D location = GameLib.getInstance().getCamera().worldToScreenLocation(new Vector2D(j * scaledTileSize, i * scaledTileSize));
+					Tile.getTile(map.getTile(i, j)).render(g, location, scaledTileSize);
 				}
 			}
 		}

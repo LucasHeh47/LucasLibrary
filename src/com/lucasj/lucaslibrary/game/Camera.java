@@ -10,12 +10,14 @@ public class Camera extends GameObject {
 	private Transform transform;
 	private Vector2D followOffset;
 	private GameObject following;
+	private Vector2D viewport;
 	
-	public Camera(GameLib game, Vector2D defaultLocation) {
+	public Camera(GameLib game, Vector2D defaultLocation, Vector2D viewport) {
 		super(game);
 		Debug.success(this, "Initiating Camera");
 		transform = new Transform();
 		this.addComponent(transform);
+		this.viewport = viewport;
 		transform.setLocation(defaultLocation);
 		transform.setSize(game.getResolution());
 		setFollowOffset(game.getResolution().divide(2));
@@ -48,6 +50,14 @@ public class Camera extends GameObject {
 
 	public void setFollowOffset(Vector2D followOffset) {
 		this.followOffset = followOffset;
+	}
+
+	public Vector2D getViewport() {
+		return viewport;
+	}
+
+	public void setViewport(Vector2D viewport) {
+		this.viewport = viewport;
 	}
 
 }

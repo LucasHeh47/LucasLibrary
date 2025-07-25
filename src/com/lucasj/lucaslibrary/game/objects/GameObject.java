@@ -8,10 +8,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import com.lucasj.lucaslibrary.events.gameobjects.GameObjectDestroyedEvent;
+import com.lucasj.lucaslibrary.events.gameobjects.GameObjectInstantiatedEvent;
 import com.lucasj.lucaslibrary.game.GameLib;
 import com.lucasj.lucaslibrary.game.interfaces.Updateable;
 import com.lucasj.lucaslibrary.game.objects.components.ObjectComponent;
-import com.lucasj.lucaslibrary.game.objects.components.physics.ColliderComponent;
 import com.lucasj.lucaslibrary.game.objects.components.physics.Transform;
 import com.lucasj.lucaslibrary.game.objects.components.rendering.RenderComponent;
 import com.lucasj.lucaslibrary.log.Debug;
@@ -45,8 +46,12 @@ public class GameObject {
 		return rootObjects;
 	}
 	
+	/***
+	 * This function handles the calling of GameObjectInstantiatedEvent
+	 */
 	protected void onInstanceCreated() {
-		
+		GameObjectInstantiatedEvent event = new GameObjectInstantiatedEvent(game, this);
+		game.getGameEventManager().dispatchEvent(event);
 	}
 	
 	protected GameObject(GameLib game) {
@@ -235,6 +240,10 @@ public class GameObject {
 	 */
 	public void destroy() {
 		if(GameObject.instantiatedObjects.contains(this)) this.destroyed = true;
+		
+		GameObjectDestroyedEvent event = new GameObjectDestroyedEvent(game, this);
+		game.getGameEventManager().dispatchEvent(event);
+		
 		for(GameObject obj : this.childObjects) {
 			obj.setParentObject(this.parentObject);
 		}

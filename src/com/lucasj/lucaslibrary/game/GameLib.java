@@ -90,7 +90,7 @@ public abstract class GameLib extends Canvas implements Runnable, Updateable, Re
 		frame.pack();
 		frame.setVisible(true);
 		instance = this;
-		camera = new Camera(this, new Vector2D(0, 0));
+		camera = new Camera(this, new Vector2D(0, 0), new Vector2D(1000));
 	}
 	
 	/***
